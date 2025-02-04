@@ -16,6 +16,8 @@ export default function Map() {
     urlPath: "",
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [urlList, setUrlList] = useState([]);
+  const [isFetchingUrls, setIsFetchingUrls] = useState(false);
 
   useEffect(() => {
     const fetchScraper = async () => {
@@ -105,7 +107,7 @@ export default function Map() {
                 <span className="label-text">Website URL</span>
               </label>
               <input
-                type="url"
+                type="text"
                 value={scraperData.websiteUrl}
                 className="input input-bordered w-full"
                 readOnly
@@ -123,9 +125,75 @@ export default function Map() {
                 readOnly
               />
             </div>
+
+            <button 
+              className="btn btn-primary"
+              onClick={async () => {
+                try {
+                  setIsFetchingUrls(true);
+                  const response = await fetch('/api/firecrawl/map', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      websiteUrl: scraperData.websiteUrl
+                    })
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error('Failed to fetch URLs');
+                  }
+                  
+                  const data = await response.json();
+                  setUrlList(data.urls);
+                } catch (error) {
+                  console.error('Error fetching URLs:', error);
+                  toast.error('Failed to fetch URLs');
+                } finally {
+                  setIsFetchingUrls(false);
+                }
+              }}
+              disabled={isFetchingUrls}
+            >
+              {isFetchingUrls ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                'Fetch URLs'
+              )}
+            </button>
           </div>
         )}
       </div>
+
+      {/* URL List Section */}
+      {urlList.length > 0 && (
+        <div className="p-4 bg-base-200 rounded-lg">
+          <h2 className="text-xl font-bold mb-4">Found URLs</h2>
+          <div className="overflow-x-auto">
+            <table className="table w-full">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>URL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {urlList.map((url, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="link link-primary">
+                        {url}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Map Content Section */}
       <div className="p-4 bg-base-200 rounded-lg">
