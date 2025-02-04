@@ -108,7 +108,7 @@ export default function Map() {
       }
 
       toast.success('URLs saved successfully');
-      router.push('/dashboard');
+      router.push(`/fields?id=${scraperId}`);
     } catch (error) {
       console.error('Error saving URLs:', error);
       toast.error(error.message || 'Failed to save URLs');
@@ -290,17 +290,6 @@ export default function Map() {
           </div>
         </div>
       )}
-
-      {/* Map Content Section */}
-      <div className="p-4 bg-base-200 rounded-lg">
-        <h2 className="text-xl font-bold mb-4">Map View</h2>
-        <div className="flex flex-col gap-4">
-          {/* Add your map content here */}
-          <div className="bg-base-100 p-4 rounded-lg">
-            <p>Map content will be displayed here</p>
-          </div>
-        </div>
-      </div>
     </main>
   );
 }
