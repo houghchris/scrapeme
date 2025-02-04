@@ -61,25 +61,26 @@ export default function Dashboard() {
                 <th>Excluded</th>
                 <th>Fields</th>
                 <th>Created</th>
+                <th>Last Scrape</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="8" className="text-center">
+                  <td colSpan="9" className="text-center">
                     <span className="loading loading-spinner loading-md"></span>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan="8" className="text-center text-error">
+                  <td colSpan="9" className="text-center text-error">
                     Error: {error}
                   </td>
                 </tr>
               ) : scrapers.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center">
+                  <td colSpan="9" className="text-center">
                     No scrapers found. Create one in the <a href="/setup" className="link link-primary">setup page</a>.
                   </td>
                 </tr>
@@ -97,6 +98,7 @@ export default function Dashboard() {
                     <td>{scraper.excludedUrls?.length || 0}</td>
                     <td>{scraper.fields?.length || 0}</td>
                     <td>{new Date(scraper.createdAt).toLocaleDateString()}</td>
+                    <td>{scraper.lastScrapeTime ? new Date(scraper.lastScrapeTime).toLocaleString() : 'Never'}</td>
                     <td>
                       <a href={`/scrape?id=${scraper._id}`} className="btn btn-sm">
                         Scrape

@@ -88,6 +88,24 @@ export default function Scrape() {
       // Set debug data
       setDebugData(data);
 
+      // Save firecrawl response to MongoDB
+      const saveResponse = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scraperId,
+          firecrawlResponse: data
+        })
+      });
+
+      const saveData = await saveResponse.json();
+      
+      if (!saveResponse.ok) {
+        throw new Error(saveData.error || 'Failed to save scrape results');
+      }
+
       // Set progress for completed scrape
       setScrapeProgress({
         status: 'completed',
