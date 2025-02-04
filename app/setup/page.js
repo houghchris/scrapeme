@@ -62,8 +62,8 @@ export default function Setup() {
         websiteUrl: false,
       });
 
-      // Redirect to the Map page
-      window.location.href = '/map';
+      // Redirect to the Map page with the scraper ID
+      window.location.href = `/map?id=${data.scraper._id}`;
     } catch (error) {
       console.error("Error:", error);
       toast.error(error.message);

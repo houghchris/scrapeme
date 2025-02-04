@@ -1,64 +1,24 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
-import Scraper from "@/models/Scraper";
-
-// Enable mongoose debug mode
-mongoose.set('debug', true);
-
-// Connect to MongoDB only once
-let isConnected = false;
-const connectDB = async () => {
-  if (isConnected) {
-    console.log('Using existing connection');
-    return;
-  }
-
-  try {
-    const MONGODB_URI = process.env.MONGODB_URI;
-    if (!MONGODB_URI) {
-      throw new Error('MONGODB_URI is not defined in environment variables');
-    }
-
-    console.log('Attempting MongoDB connection...');
-    
-    const options = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    };
-
-    await mongoose.connect(MONGODB_URI, options);
-    
-    // Test the connection by making a simple query
-    await mongoose.connection.db.admin().ping();
-    console.log('MongoDB connection successful and verified');
-    isConnected = true;
-    
-    return true;
-  } catch (error) {
-    console.error('MongoDB Connection Error Details:');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error code:', error.code);
-    console.error('Error stack:', error.stack);
-    
-    if (error.name === 'MongoServerError') {
-      console.error('MongoDB Server Error Details:', {
-        codeName: error.codeName,
-        writeErrors: error.writeErrors,
-        errorLabels: error.errorLabels,
-      });
-    }
-    
-    throw error;
-  }
-};
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/next-auth";
+import clientPromise from '@/libs/mongodb';
 
 export async function GET() {
   try {
-    await connectDB();
-    const scrapers = await Scraper.find().sort({ createdAt: -1 });
+    // Get the authenticated session
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db();
+
+    const scrapers = await db.collection('scrapers')
+      .find({ userId: session.user.id })
+      .sort({ createdAt: -1 })
+      .toArray();
+
     return NextResponse.json(scrapers);
   } catch (error) {
     console.error("Error in GET /api/scrapers:", error);
@@ -71,6 +31,12 @@ export async function GET() {
 
 export async function POST(req) {
   try {
+    // Get the authenticated session
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     console.log('Received request body:', body);
 
@@ -84,48 +50,30 @@ export async function POST(req) {
       );
     }
 
-    // Connect to MongoDB
-    console.log('Connecting to MongoDB...');
-    await connectDB();
+    const client = await clientPromise;
+    const db = client.db();
 
     // Create new scraper
-    console.log('Creating new scraper with data:', { name, websiteUrl, urlPath });
-    const scraper = await Scraper.create({
+    const scraper = {
       name,
       websiteUrl,
       urlPath: urlPath || "",
-    });
-    console.log('Scraper created successfully:', scraper);
+      userId: session.user.id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-    return NextResponse.json(
-      { message: "Scraper created successfully", scraper },
-      { status: 201 }
-    );
+    const result = await db.collection('scrapers').insertOne(scraper);
+    
+    // Return the created scraper with its ID
+    return NextResponse.json({
+      message: "Scraper created successfully",
+      scraper: { ...scraper, _id: result.insertedId }
+    }, { status: 201 });
   } catch (error) {
-    console.error("Detailed error creating scraper:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
-
-    // Check if it's a MongoDB validation error
-    if (error instanceof mongoose.Error.ValidationError) {
-      return NextResponse.json(
-        { error: "Validation error: " + error.message },
-        { status: 400 }
-      );
-    }
-
-    // Check if it's a MongoDB connection error
-    if (error.name === "MongooseServerSelectionError") {
-      return NextResponse.json(
-        { error: "Database connection error. Please try again later." },
-        { status: 503 }
-      );
-    }
-
+    console.error("Error in POST /api/scrapers:", error);
     return NextResponse.json(
-      { error: "Error creating scraper: " + error.message },
+      { error: error.message },
       { status: 500 }
     );
   }

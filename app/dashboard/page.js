@@ -83,7 +83,7 @@ export default function Dashboard() {
               ) : (
                 scrapers.map((scraper, index) => (
                   <tr key={scraper._id}>
-                    <th>{index + 1}</th>
+                    <th className="font-mono text-xs">{scraper._id}</th>
                     <td>{scraper.name}</td>
                     <td>
                       <a href={scraper.websiteUrl} target="_blank" rel="noopener noreferrer" className="link link-primary">
