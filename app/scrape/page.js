@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
-export default function Fields() {
+export default function Scrape() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -15,10 +15,9 @@ export default function Fields() {
   const [scraperData, setScraperData] = useState({
     name: "",
     urls: [],
+    fields: []
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [fields, setFields] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Check authentication
   useEffect(() => {
@@ -50,10 +49,6 @@ export default function Fields() {
 
         console.log('Fetched scraper data:', data);
         setScraperData(data);
-        // Load existing fields if they exist
-        if (data.fields && Array.isArray(data.fields)) {
-          setFields(data.fields);
-        }
       } catch (error) {
         console.error("Error:", error);
         toast.error(error.message || "Failed to load scraper data");
@@ -67,6 +62,31 @@ export default function Fields() {
 
     fetchScraper();
   }, [scraperId, router, status]);
+
+  const handleScrapeNow = async () => {
+    try {
+      const response = await fetch('/api/scrapers/scrape', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scraperId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start scraping');
+      }
+
+      toast.success('Scraping started successfully');
+    } catch (error) {
+      console.error('Error starting scrape:', error);
+      toast.error(error.message || 'Failed to start scraping');
+    }
+  };
 
   return (
     <main className="min-h-screen p-8 pb-24 max-w-6xl mx-auto space-y-8">
@@ -92,7 +112,7 @@ export default function Fields() {
         <ul className="steps w-full">
           <li className="step step-primary">Register</li>
           <li className="step step-primary">Choose plan</li>
-          <li className="step">Purchase</li>
+          <li className="step step-primary">Purchase</li>
           <li className="step">Receive Product</li>
         </ul>
       </div>
@@ -128,95 +148,43 @@ export default function Fields() {
                 readOnly
               />
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* Fields Section */}
-      <div className="p-4 bg-base-200 rounded-lg">
-        <h2 className="text-xl font-bold mb-4">Fields</h2>
-        <div className="space-y-4">
-          {fields.map((field, index) => (
-            <div key={index} className="flex gap-4">
-              <div className="form-control flex-1">
-                <label className="label">
-                  <span className="label-text">Field ID</span>
-                </label>
-                <input
-                  type="text"
-                  value={field.id}
-                  onChange={(e) => {
-                    const newValue = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    const newFields = [...fields];
-                    newFields[index] = { ...field, id: newValue };
-                    setFields(newFields);
-                  }}
-                  placeholder="Enter field id"
-                  className="input input-bordered w-full"
-                />
-              </div>
-              <div className="form-control flex-1">
-                <label className="label">
-                  <span className="label-text">Prompt</span>
-                </label>
-                <input
-                  type="text"
-                  value={field.prompt}
-                  onChange={(e) => {
-                    const newFields = [...fields];
-                    newFields[index] = { ...field, prompt: e.target.value };
-                    setFields(newFields);
-                  }}
-                  placeholder="Enter prompt"
-                  className="input input-bordered w-full"
-                />
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">Fields</span>
+              </label>
+              <div className="space-y-4">
+                {scraperData.fields?.map((field, index) => (
+                  <div key={index} className="flex gap-4">
+                    <div className="form-control flex-1">
+                      <input
+                        type="text"
+                        value={field.id}
+                        className="input input-bordered w-full"
+                        readOnly
+                      />
+                    </div>
+                    <div className="form-control flex-1">
+                      <input
+                        type="text"
+                        value={field.prompt}
+                        className="input input-bordered w-full"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-          
-          <button
-            className="btn btn-secondary w-full"
-            onClick={() => setFields([...fields, { id: '', prompt: '' }])}
-          >
-            Add Field
-          </button>
 
-          <button
-            className={`btn btn-primary w-full ${isSaving ? 'loading' : ''}`}
-            onClick={async () => {
-              try {
-                setIsSaving(true);
-                const response = await fetch('/api/scrapers/fields', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    scraperId,
-                    fields: fields
-                  })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                  throw new Error(data.error || 'Failed to save fields');
-                }
-
-                toast.success('Fields saved successfully');
-                router.push(`/scrape?id=${scraperId}`);
-              } catch (error) {
-                console.error('Error saving fields:', error);
-                toast.error(error.message || 'Failed to save fields');
-              } finally {
-                setIsSaving(false);
-              }
-            }}
-            disabled={isSaving}
-          >
-            Save & Proceed
-          </button>
-        </div>
+            <button
+              className="btn btn-primary w-full mt-4"
+              onClick={handleScrapeNow}
+            >
+              Scrape Now
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
