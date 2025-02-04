@@ -257,20 +257,26 @@ export default function Scrape() {
         </div>
       )}
 
-      {/* Debug Section */}
-      <div className="p-4 bg-base-200 rounded-lg">
-        <h2 className="text-xl font-bold mb-4">Debug</h2>
-        {debugData ? (
-          <>
-            <h3 className="font-bold mb-2">Firecrawl Response:</h3>
-            <pre className="bg-base-300 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap mb-4">
-              {JSON.stringify(debugData, null, 2)}
-            </pre>
-          </>
-        ) : (
-          <p className="text-gray-500">No debug data available. Click "Scrape Now" to see the response.</p>
-        )}
-      </div>
+      {/* Debug Info Section */}
+      {debugData && (
+        <div className="p-4 bg-base-200 rounded-lg">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Debug Information</h2>
+            {debugData.firecrawl?.success && (
+              <a 
+                href={`/api/xml?id=${scraperId}`}
+                className="btn btn-primary"
+                target="_blank"
+              >
+                View XML
+              </a>
+            )}
+          </div>
+          <pre className="whitespace-pre-wrap bg-base-300 p-4 rounded-lg overflow-x-auto">
+            {JSON.stringify(debugData, null, 2)}
+          </pre>
+        </div>
+      )}
     </main>
   );
 }

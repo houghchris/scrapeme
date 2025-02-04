@@ -100,9 +100,28 @@ export default function Dashboard() {
                     <td>{new Date(scraper.createdAt).toLocaleDateString()}</td>
                     <td>{scraper.lastScrapeTime ? new Date(scraper.lastScrapeTime).toLocaleString() : 'Never'}</td>
                     <td>
-                      <a href={`/scrape?id=${scraper._id}`} className="btn btn-sm">
-                        Scrape
-                      </a>
+                      <div className="join">
+                        {scraper.urls?.length > 0 && (
+                          <a href={`/map?id=${scraper._id}`} className="btn join-item btn-sm">
+                            Map
+                          </a>
+                        )}
+                        {scraper.fields?.length > 0 && (
+                          <a href={`/scrape?id=${scraper._id}`} className="btn join-item btn-sm">
+                            Scrape
+                          </a>
+                        )}
+                        {scraper.lastFirecrawlResponse && (
+                          <a 
+                            href={`/api/xml?id=${scraper._id}`} 
+                            className="btn join-item btn-sm"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            XML
+                          </a>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
