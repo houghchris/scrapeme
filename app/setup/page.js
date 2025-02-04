@@ -1,20 +1,73 @@
 'use client';
 
 import ButtonAccount from "@/components/ButtonAccount";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
 export default function Setup() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const scraperId = searchParams.get('id');
+  
   const [formData, setFormData] = useState({
     name: "",
     websiteUrl: "",
     urlPath: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [touched, setTouched] = useState({
     name: false,
     websiteUrl: false,
   });
+
+  // Check authentication
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  // Fetch existing scraper data if ID is provided
+  useEffect(() => {
+    const fetchScraper = async () => {
+      if (!scraperId) {
+        setIsLoading(false);
+        return;
+      }
+
+      if (status !== "authenticated") {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/scrapers/${scraperId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Error fetching scraper data");
+        }
+
+        console.log('Fetched scraper data:', data);
+        
+        // Pre-populate form data
+        setFormData({
+          name: data.name || "",
+          websiteUrl: data.websiteUrl || "",
+          urlPath: data.urlPath || "",
+        });
+      } catch (error) {
+        console.error("Error:", error);
+        toast.error(error.message || "Failed to load scraper data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchScraper();
+  }, [scraperId, status]);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent form submission
@@ -112,74 +165,80 @@ export default function Setup() {
         </ul>
       </div>
 
-      {/* Input Fields Section */}
-      <form onSubmit={handleSubmit} className="p-4 bg-base-200 rounded-lg">
-        <h2 className="text-xl font-bold mb-4">Scraper Setup</h2>
-        <div className="flex flex-col gap-4">
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Scraper Name <span className="text-error">*</span></span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              onBlur={() => handleBlur('name')}
-              className={`input input-bordered w-full ${showNameError ? 'input-error' : ''}`}
-              placeholder="Enter scraper name"
-            />
-            {showNameError && (
+      {/* Setup Form */}
+      <div className="p-4 bg-base-200 rounded-lg">
+        <h2 className="text-xl font-bold mb-4">Setup Scraper</h2>
+        {isLoading ? (
+          <div className="flex justify-center items-center p-4">
+            <span className="loading loading-spinner loading-md"></span>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="form-control w-full">
               <label className="label">
-                <span className="label-text-alt text-error">Name is required</span>
+                <span className="label-text">Scraper Name <span className="text-error">*</span></span>
               </label>
-            )}
-          </div>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                onBlur={() => handleBlur('name')}
+                className={`input input-bordered w-full ${showNameError ? 'input-error' : ''}`}
+                placeholder="Enter scraper name"
+              />
+              {showNameError && (
+                <label className="label">
+                  <span className="label-text-alt text-error">Name is required</span>
+                </label>
+              )}
+            </div>
 
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Website URL <span className="text-error">*</span></span>
-            </label>
-            <input
-              type="url"
-              name="websiteUrl"
-              value={formData.websiteUrl}
-              onChange={handleChange}
-              onBlur={() => handleBlur('websiteUrl')}
-              className={`input input-bordered w-full ${showUrlError ? 'input-error' : ''}`}
-              placeholder="https://example.com"
-            />
-            {showUrlError && (
+            <div className="form-control w-full">
               <label className="label">
-                <span className="label-text-alt text-error">Website URL is required</span>
+                <span className="label-text">Website URL <span className="text-error">*</span></span>
               </label>
-            )}
-          </div>
+              <input
+                type="url"
+                name="websiteUrl"
+                value={formData.websiteUrl}
+                onChange={handleChange}
+                onBlur={() => handleBlur('websiteUrl')}
+                className={`input input-bordered w-full ${showUrlError ? 'input-error' : ''}`}
+                placeholder="https://example.com"
+              />
+              {showUrlError && (
+                <label className="label">
+                  <span className="label-text-alt text-error">Website URL is required</span>
+                </label>
+              )}
+            </div>
 
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">URL Path</span>
-              <span className="label-text-alt text-info">Optional</span>
-            </label>
-            <input
-              type="text"
-              name="urlPath"
-              value={formData.urlPath}
-              onChange={handleChange}
-              className="input input-bordered w-full"
-              placeholder="/result/"
-            />
-          </div>
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">URL Path</span>
+                <span className="label-text-alt text-info">Optional</span>
+              </label>
+              <input
+                type="text"
+                name="urlPath"
+                value={formData.urlPath}
+                onChange={handleChange}
+                className="input input-bordered w-full"
+                placeholder="/result/"
+              />
+            </div>
 
-          <button
-            type="submit"
-            className={`btn btn-primary w-full ${isLoading ? 'loading' : ''}`}
-            disabled={isLoading}
-          >
-            {isLoading ? "Creating..." : "Create Scraper"}
-          </button>
-        </div>
-      </form>
+            <button
+              type="submit"
+              className={`btn btn-primary w-full ${isLoading ? 'loading' : ''}`}
+              disabled={isLoading}
+            >
+              {isLoading ? "Creating..." : "Create Scraper"}
+            </button>
+          </form>
+        )}
+      </div>
     </main>
   );
 }

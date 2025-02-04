@@ -16,6 +16,8 @@ export default function Map() {
     name: "",
     websiteUrl: "",
     urlPath: "",
+    includedUrls: [],
+    excludedUrls: [],
   });
   const [isLoading, setIsLoading] = useState(true);
   const [urlList, setUrlList] = useState([]);
@@ -51,8 +53,33 @@ export default function Map() {
           throw new Error(data.error || "Error fetching scraper data");
         }
 
-        console.log('Fetched scraper data:', data);
+        console.log('Raw scraper data:', JSON.stringify(data, null, 2));
         setScraperData(data);
+        
+        // Pre-populate URLs if they exist
+        if (data.urls || data.excludedUrls) {
+          console.log('Found URLs in data:', {
+            included: data.urls?.length || 0,
+            excluded: data.excludedUrls?.length || 0
+          });
+          
+          // Combine all URLs
+          const allUrls = [
+            ...(data.urls || []),
+            ...(data.excludedUrls || [])
+          ];
+          setUrlList(allUrls);
+          
+          // Create Set of excluded URLs
+          const excludedSet = new Set(data.excludedUrls || []);
+          setExcludedUrls(excludedSet);
+          
+          console.log('Setting URL states:', {
+            totalUrls: allUrls.length,
+            excludedCount: excludedSet.size,
+            includedCount: data.urls?.length || 0
+          });
+        }
       } catch (error) {
         console.error("Error:", error);
         toast.error(error.message || "Failed to load scraper data");

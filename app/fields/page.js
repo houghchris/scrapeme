@@ -138,7 +138,7 @@ export default function Fields() {
                   type="text"
                   value={field.id}
                   onChange={(e) => {
-                    const newValue = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const newValue = e.target.value.toLowerCase().replace(/[^a-z0-9\-_]/g, '');
                     const newFields = [...fields];
                     newFields[index] = { ...field, id: newValue };
                     setFields(newFields);
