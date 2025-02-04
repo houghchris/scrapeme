@@ -1,6 +1,7 @@
 'use client';
 
 import ButtonAccount from "@/components/ButtonAccount";
+import NavigationBar from "@/components/NavigationBar";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from "next-auth/react";
@@ -147,12 +148,7 @@ export default function Map() {
   return (
     <main className="min-h-screen p-8 pb-24 max-w-6xl mx-auto space-y-8">
       {/* Navigation Bar */}
-      <div className="navbar bg-base-100">
-        <div className="flex-1">
-          <a href="/dashboard" className="btn btn-ghost text-xl">Scraper App</a>
-        </div>
-        <ButtonAccount />
-      </div>
+      <NavigationBar />
 
       {/* Steps Section */}
       <div className="p-4 bg-base-200 rounded-lg">

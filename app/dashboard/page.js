@@ -1,6 +1,7 @@
 'use client';
 
 import ButtonAccount from "@/components/ButtonAccount";
+import NavigationBar from "@/components/NavigationBar";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { MapIcon, ArrowDownOnSquareIcon, CodeBracketIcon, TrashIcon } from "@heroicons/react/24/outline";
@@ -57,12 +58,7 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen p-8 pb-24 max-w-6xl mx-auto space-y-8">
       {/* Navigation Bar */}
-      <div className="navbar bg-base-100">
-        <div className="flex-1">
-          <a href="/dashboard" className="btn btn-ghost text-xl">Scraper App</a>
-        </div>
-        <ButtonAccount />
-      </div>
+      <NavigationBar />
 
       {/* Table Section */}
       <div className="p-4">
