@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
 import clientPromise from '@/libs/mongodb';
+import { ObjectId } from 'mongodb';
 
 export async function GET() {
   try {
@@ -14,10 +15,25 @@ export async function GET() {
     const client = await clientPromise;
     const db = client.db();
 
+    // First, get the specific scraper directly
+    const specificScraper = await db.collection('scrapers').findOne({
+      _id: new ObjectId("67a22c5f3313da252ef81c0f")
+    });
+    console.log('Direct query for specific scraper:', JSON.stringify(specificScraper, null, 2));
+
+    // Then get all scrapers as normal
     const scrapers = await db.collection('scrapers')
       .find({ userId: session.user.id })
       .sort({ createdAt: -1 })
       .toArray();
+
+    // Log the specific scraper from the array if found
+    const scraperFromArray = scrapers.find(s => s._id.toString() === "67a22c5f3313da252ef81c0f");
+    if (scraperFromArray) {
+      console.log('Specific scraper from array:', JSON.stringify(scraperFromArray, null, 2));
+    } else {
+      console.log('Specific scraper not found in array');
+    }
 
     return NextResponse.json(scrapers);
   } catch (error) {

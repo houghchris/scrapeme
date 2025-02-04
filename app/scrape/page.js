@@ -18,6 +18,8 @@ export default function Scrape() {
     fields: []
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isScraping, setIsScraping] = useState(false);
+  const [debugData, setDebugData] = useState(null);
 
   // Check authentication
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function Scrape() {
 
   const handleScrapeNow = async () => {
     try {
+      setIsScraping(true);
       const response = await fetch('/api/scrapers/scrape', {
         method: 'POST',
         headers: {
@@ -81,10 +84,29 @@ export default function Scrape() {
         throw new Error(data.error || 'Failed to start scraping');
       }
 
+      // Set debug data
+      setDebugData({
+        firecrawl: data.firecrawl,
+        scraper: {
+          lastFirecrawlId: data.scraper.lastFirecrawlId,
+          lastScrapeStarted: data.scraper.lastScrapeStarted
+        }
+      });
+
       toast.success('Scraping started successfully');
+      // Update the scraper data to reflect the new Firecrawl ID
+      setScraperData(prev => ({
+        ...prev,
+        lastFirecrawlId: data.firecrawl.id,
+        lastScrapeStarted: new Date()
+      }));
     } catch (error) {
       console.error('Error starting scrape:', error);
       toast.error(error.message || 'Failed to start scraping');
+      // Set error in debug data
+      setDebugData({ error: error.message });
+    } finally {
+      setIsScraping(false);
     }
   };
 
@@ -180,10 +202,37 @@ export default function Scrape() {
             <button
               className="btn btn-primary w-full mt-4"
               onClick={handleScrapeNow}
+              disabled={isScraping}
             >
-              Scrape Now
+              {isScraping ? (
+                <>
+                  <span className="loading loading-spinner"></span>
+                  Scraping...
+                </>
+              ) : (
+                'Scrape Now'
+              )}
             </button>
           </div>
+        )}
+      </div>
+
+      {/* Debug Section */}
+      <div className="p-4 bg-base-200 rounded-lg">
+        <h2 className="text-xl font-bold mb-4">Debug</h2>
+        {debugData ? (
+          <>
+            <h3 className="font-bold mb-2">Firecrawl Response:</h3>
+            <pre className="bg-base-300 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap mb-4">
+              {JSON.stringify(debugData.firecrawl, null, 2)}
+            </pre>
+            <h3 className="font-bold mb-2">MongoDB State:</h3>
+            <pre className="bg-base-300 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
+              {JSON.stringify(debugData.scraper, null, 2)}
+            </pre>
+          </>
+        ) : (
+          <p className="text-gray-500">No debug data available. Click "Scrape Now" to see the response.</p>
         )}
       </div>
     </main>
