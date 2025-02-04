@@ -39,3 +39,39 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function DELETE(request, { params }) {
+  try {
+    // Get the authenticated session
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db();
+
+    // Validate the ID format
+    let scraperId;
+    try {
+      scraperId = new ObjectId(params.id);
+    } catch (error) {
+      return NextResponse.json({ error: "Invalid scraper ID format" }, { status: 400 });
+    }
+
+    // Delete the scraper
+    const result = await db.collection('scrapers').deleteOne({
+      _id: scraperId,
+      userId: session.user.id
+    });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: "Scraper not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: "Scraper deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting scraper:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
