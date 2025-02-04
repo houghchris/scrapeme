@@ -20,6 +20,7 @@ export default function Scrape() {
   const [isLoading, setIsLoading] = useState(true);
   const [isScraping, setIsScraping] = useState(false);
   const [debugData, setDebugData] = useState(null);
+  const [scrapeProgress, setScrapeProgress] = useState(null);
 
   // Check authentication
   useEffect(() => {
@@ -85,25 +86,20 @@ export default function Scrape() {
       }
 
       // Set debug data
-      setDebugData({
-        firecrawl: data.firecrawl,
-        scraper: {
-          lastFirecrawlId: data.scraper.lastFirecrawlId,
-          lastScrapeStarted: data.scraper.lastScrapeStarted
-        }
+      setDebugData(data);
+
+      // Set progress for completed scrape
+      setScrapeProgress({
+        status: 'completed',
+        completed: scraperData.urls.length,
+        total: scraperData.urls.length,
+        isComplete: true
       });
 
-      toast.success('Scraping started successfully');
-      // Update the scraper data to reflect the new Firecrawl ID
-      setScraperData(prev => ({
-        ...prev,
-        lastFirecrawlId: data.firecrawl.id,
-        lastScrapeStarted: new Date()
-      }));
+      toast.success('Scraping completed successfully');
     } catch (error) {
       console.error('Error starting scrape:', error);
       toast.error(error.message || 'Failed to start scraping');
-      // Set error in debug data
       setDebugData({ error: error.message });
     } finally {
       setIsScraping(false);
@@ -217,6 +213,32 @@ export default function Scrape() {
         )}
       </div>
 
+      {/* Progress Section */}
+      {scrapeProgress && (
+        <div className="p-4 bg-base-200 rounded-lg text-center">
+          <h2 className="text-xl font-bold mb-4">Scrape Progress</h2>
+          {scrapeProgress.total > 0 && (
+            <div className="flex flex-col items-center gap-4">
+              <div 
+                className="radial-progress" 
+                style={{"--value": (scrapeProgress.completed / scrapeProgress.total) * 100}} 
+                role="progressbar"
+              >
+                {Math.round((scrapeProgress.completed / scrapeProgress.total) * 100)}%
+              </div>
+              <div className="text-sm">
+                {scrapeProgress.completed} of {scrapeProgress.total} URLs processed
+              </div>
+              {scrapeProgress.isComplete && (
+                <button className="btn btn-primary">
+                  XML
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Debug Section */}
       <div className="p-4 bg-base-200 rounded-lg">
         <h2 className="text-xl font-bold mb-4">Debug</h2>
@@ -224,11 +246,7 @@ export default function Scrape() {
           <>
             <h3 className="font-bold mb-2">Firecrawl Response:</h3>
             <pre className="bg-base-300 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap mb-4">
-              {JSON.stringify(debugData.firecrawl, null, 2)}
-            </pre>
-            <h3 className="font-bold mb-2">MongoDB State:</h3>
-            <pre className="bg-base-300 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
-              {JSON.stringify(debugData.scraper, null, 2)}
+              {JSON.stringify(debugData, null, 2)}
             </pre>
           </>
         ) : (

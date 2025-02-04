@@ -57,14 +57,14 @@ export async function POST(req) {
 
     console.log('Sending request to Firecrawl with schema:', schema);
 
-    // Start async batch scrape
+    // Start synchronous batch scrape
     const batchScrapeJob = await app.batchScrapeUrls(scraper.urls, {
       formats: ['extract'],
       extract: {
         prompt: "Extract the specified fields from the page.",
         schema: schema
       }
-    }, true); // Pass true to make it asynchronous
+    }, false); // Pass false for synchronous scraping
 
     console.log('Firecrawl response:', JSON.stringify(batchScrapeJob, null, 2));
 
@@ -73,35 +73,17 @@ export async function POST(req) {
       throw new Error(batchScrapeJob.error || 'Failed to start batch scrape');
     }
 
-    // Save the firecrawl job ID to the scraper document
-    console.log('Updating MongoDB with Firecrawl ID:', batchScrapeJob.id);
-    const updateResult = await db.collection('scrapers').updateOne(
-      { _id: scraperObjectId },
-      { 
-        $set: { 
-          lastFirecrawlId: batchScrapeJob.id,
-          lastScrapeStarted: new Date()
-        }
-      }
-    );
-    console.log('MongoDB update result:', JSON.stringify(updateResult, null, 2));
-
-    if (!updateResult.acknowledged || updateResult.modifiedCount !== 1) {
-      console.error('Failed to update MongoDB:', JSON.stringify(updateResult, null, 2));
-      throw new Error('Failed to save Firecrawl ID to database');
-    }
-
-    // Double-check that the update was successful
-    const updatedScraper = await db.collection('scrapers').findOne({ _id: scraperObjectId });
-    console.log('Verified updated scraper:', JSON.stringify(updatedScraper, null, 2));
-
-    // Return both the Firecrawl response and the updated scraper state
+    // Return the scrape results
     const response = {
-      firecrawl: batchScrapeJob,  // This will have the id and url from Firecrawl
-      scraper: updatedScraper     // This shows the MongoDB state after update
+      firecrawl: {
+        ...batchScrapeJob,
+        status: 'completed',
+        completed: scraper.urls.length,
+        total: scraper.urls.length
+      }
     };
+    
     console.log('Sending response:', JSON.stringify(response, null, 2));
-
     return new Response(JSON.stringify(response), { status: 200 });
 
   } catch (error) {
