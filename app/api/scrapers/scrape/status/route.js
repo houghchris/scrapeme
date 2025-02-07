@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
-import { FirecrawlApp } from "@firecrawl/sdk";
+import FirecrawlApp from "@mendable/firecrawl-js";
 
 export async function GET(req) {
   try {
