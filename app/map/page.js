@@ -217,7 +217,8 @@ export default function Map() {
                       'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                      websiteUrl: scraperData.websiteUrl
+                      websiteUrl: scraperData.websiteUrl,
+                      scraperId
                     })
                   });
                   

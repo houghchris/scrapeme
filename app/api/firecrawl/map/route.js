@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import FirecrawlApp from '@mendable/firecrawl-js';
+import clientPromise from "@/libs/mongodb";
+import { ObjectId } from 'mongodb';
 
 export async function POST(req) {
   try {
-    const { websiteUrl } = await req.json();
+    const { websiteUrl, scraperId } = await req.json();
     
-    if (!websiteUrl) {
+    if (!websiteUrl || !scraperId) {
       return NextResponse.json(
-        { error: 'Website URL is required' },
+        { error: 'Website URL and Scraper ID are required' },
         { status: 400 }
       );
     }
@@ -17,6 +19,20 @@ export async function POST(req) {
 
     if (!mapResult.success) {
       throw new Error(`Failed to map: ${mapResult.error}`);
+    }
+
+    // Record credit usage if available
+    if (mapResult.creditsUsed) {
+      const client = await clientPromise;
+      const db = client.db();
+      await db.collection('credit_usage').insertOne({
+        operationType: 'map',
+        creditsUsed: mapResult.creditsUsed,
+        scraperId: new ObjectId(scraperId),
+        timestamp: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
     }
     
     return NextResponse.json({ urls: mapResult.links });

@@ -83,6 +83,20 @@ export async function POST(req) {
       }
     };
     
+    // Record credit usage
+    if (batchScrapeJob.creditsUsed) {
+      const client = await clientPromise;
+      const db = client.db();
+      await db.collection('credit_usage').insertOne({
+        operationType: 'scrape',
+        creditsUsed: batchScrapeJob.creditsUsed,
+        scraperId: scraperObjectId,
+        timestamp: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+    
     console.log('Sending response:', JSON.stringify(response, null, 2));
     return new Response(JSON.stringify(response), { status: 200 });
 

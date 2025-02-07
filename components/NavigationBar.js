@@ -1,9 +1,12 @@
 'use client';
 
+import { usePathname } from "next/navigation";
 import ButtonAccount from "./ButtonAccount";
 import Link from "next/link";
 
 const NavigationBar = () => {
+  const pathname = usePathname();
+
   return (
     <div className="navbar bg-base-100">
       <div className="flex-1 flex items-center gap-2">
