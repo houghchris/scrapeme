@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
 import FirecrawlApp from "@mendable/firecrawl-js";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   try {
     const session = await getServerSession(authOptions);

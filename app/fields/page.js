@@ -2,12 +2,27 @@
 
 import ButtonAccount from "@/components/ButtonAccount";
 import NavigationBar from "@/components/NavigationBar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
 export default function Fields() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen p-8 pb-24 max-w-6xl mx-auto space-y-8">
+        <NavigationBar />
+        <div className="flex justify-center items-center h-64">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      </main>
+    }>
+      <FieldsContent />
+    </Suspense>
+  );
+}
+
+function FieldsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session, status } = useSession();

@@ -44,6 +44,8 @@ function jsonToXml(obj) {
   return xml;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   try {
     // Get the scraper ID from the URL
